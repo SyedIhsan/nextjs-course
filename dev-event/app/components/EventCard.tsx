@@ -18,7 +18,7 @@ const EventCard = ({ title, image, slug, location, date, time }: Props) => {
         alt={title}
         width={410}
         height={300}
-        className="poster"
+        className="poster h-auto"
       />
 
       <div className="flex flex-row gap-2">
@@ -27,6 +27,7 @@ const EventCard = ({ title, image, slug, location, date, time }: Props) => {
           alt="location"
           width={14}
           height={14}
+          className="w-auto h-auto"
         />
         <p>{location}</p>
       </div>
@@ -40,6 +41,7 @@ const EventCard = ({ title, image, slug, location, date, time }: Props) => {
             alt="date"
             width={14}
             height={14}
+            className="w-auto h-auto"
           />
           <p>{date}</p>
         </div>
@@ -49,6 +51,7 @@ const EventCard = ({ title, image, slug, location, date, time }: Props) => {
             alt="time"
             width={14}
             height={14}
+            className="w-auto h-auto"
           />
           <p>{time}</p>
         </div>
