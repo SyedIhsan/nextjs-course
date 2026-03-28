@@ -23,7 +23,6 @@ const BookingSchema = new Schema<IBooking>(
       type: String,
       required: [true, 'Email is required'],
       trim: true,
-      // Simple RFC-lite regex that allows plus-addressing and any-length TLDs
       match: [
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         'Please enter a valid email address',
