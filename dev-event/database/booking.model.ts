@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, Types } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types, HydratedDocument } from 'mongoose';
 import Event from './event.model';
 
 /**
@@ -23,8 +23,9 @@ const BookingSchema = new Schema<IBooking>(
       type: String,
       required: [true, 'Email is required'],
       trim: true,
+      // Simple RFC-lite regex that allows plus-addressing and any-length TLDs
       match: [
-        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         'Please enter a valid email address',
       ],
     },
@@ -38,7 +39,7 @@ const BookingSchema = new Schema<IBooking>(
  * Pre-save hook:
  * 1. Verifies that the referenced Event exists.
  */
-BookingSchema.pre('save', async function (this: IBooking) {
+BookingSchema.pre('save', async function (this: HydratedDocument<IBooking>) {
   if (this.isModified('eventId')) {
     const eventExists = await Event.exists({ _id: this.eventId });
     if (!eventExists) {

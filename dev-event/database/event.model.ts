@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document, Model, HydratedDocument } from 'mongoose';
 
 /**
  * Interface representing an Event document in MongoDB.
@@ -60,31 +60,72 @@ const EventSchema = new Schema<IEvent>(
 
 /**
  * Pre-save hook:
- * 1. Generates URL-friendly slug from title.
- * 2. Validates and normalizes date.
- * 3. Normalizes time format.
+ * 1. Generates URL-friendly unique slug from title.
+ * 2. Validates and normalizes date using UTC to avoid timezone shifts.
+ * 3. Validates and normalizes time format.
  */
-EventSchema.pre('save', function (this: IEvent) {
-  // Slug Generation
+EventSchema.pre('save', async function (this: HydratedDocument<IEvent>) {
+  // Slug Generation with uniqueness check
   if (this.isModified('title')) {
-    this.slug = this.title
+    let baseSlug = this.title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
-  }
-
-  // Date Validation and Normalization
-  if (this.isModified('date')) {
-    const parsedDate = new Date(this.date);
-    if (isNaN(parsedDate.getTime())) {
-      throw new Error('Invalid date format. Please provide a valid date string.');
+    
+    let slug = baseSlug;
+    let counter = 1;
+    
+    // Check for collisions and append suffix if necessary
+    while (await (this.constructor as Model<IEvent>).exists({ slug, _id: { $ne: this._id } })) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
     }
-    this.date = parsedDate.toISOString().split('T')[0];
+    
+    this.slug = slug;
   }
 
-  // Time Normalization
+  // Date Validation and Normalization (UTC-safe)
+  if (this.isModified('date')) {
+    const dateRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
+    const match = this.date.match(dateRegex);
+    
+    if (match) {
+      const year = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10);
+      const day = parseInt(match[3], 10);
+      
+      // Basic range validation
+      if (month < 1 || month > 12 || day < 1 || day > 31) {
+        throw new Error('Invalid date components. Please provide a valid YYYY-MM-DD date.');
+      }
+      
+      // Construct UTC date to verify it's a valid calendar date
+      const utcDate = new Date(Date.UTC(year, month - 1, day));
+      if (utcDate.getUTCFullYear() !== year || utcDate.getUTCMonth() !== month - 1 || utcDate.getUTCDate() !== day) {
+        throw new Error('Invalid calendar date provided.');
+      }
+      
+      this.date = utcDate.toISOString().split('T')[0];
+    } else {
+      // Fallback to standard parsing if not already YYYY-MM-DD, but still UTC-safe
+      const parsedDate = new Date(this.date);
+      if (isNaN(parsedDate.getTime())) {
+        throw new Error('Invalid date format. Please provide a valid date string.');
+      }
+      this.date = parsedDate.toISOString().split('T')[0];
+    }
+  }
+
+  // Time Normalization and Validation
   if (this.isModified('time')) {
-    this.time = this.time.trim().toLowerCase();
+    const timeValue = this.time.trim().toLowerCase();
+    // Regex for 24h "HH:MM" or 12h with am/pm "h:mm am"
+    const timeRegex = /^([01]?\d|2[0-3]):([0-5]\d)$|^([1-9]|1[0-2]):([0-5]\d)\s?(am|pm)$/i;
+    
+    if (!timeRegex.test(timeValue)) {
+      throw new Error('Invalid time format. Use HH:MM or h:mm AM/PM.');
+    }
+    this.time = timeValue;
   }
 });
 

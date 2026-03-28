@@ -1,18 +1,6 @@
 import mongoose, { Mongoose } from 'mongoose';
 
 /**
- * MONGODB_URI should be defined in your environment variables.
- * In development, use .env.local to store your credentials.
- */
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error(
-    'Please define the MONGODB_URI environment variable inside .env.local'
-  );
-}
-
-/**
  * Global is used here to maintain a cached connection across hot reloads
  * in development. This prevents connections from growing exponentially
  * during API Route usage.
@@ -24,19 +12,27 @@ interface MongooseCache {
 
 declare global {
   // eslint-disable-next-line no-var
-  var mongoose: MongooseCache;
+  var __mongooseCache: MongooseCache;
 }
 
-let cached = global.mongoose;
+let cached = global.__mongooseCache;
 
 if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+  cached = global.__mongooseCache = { conn: null, promise: null };
 }
 
 /**
- * Established a connection to MongoDB or returns the cached connection.
+ * Establishes a connection to MongoDB or returns the cached connection.
  */
 async function connectToDatabase(): Promise<Mongoose> {
+  const MONGODB_URI = process.env.MONGODB_URI;
+
+  if (!MONGODB_URI) {
+    throw new Error(
+      'Please define the MONGODB_URI environment variable inside .env.local'
+    );
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
@@ -47,7 +43,7 @@ async function connectToDatabase(): Promise<Mongoose> {
     };
 
     // Initialize the connection promise
-    cached.promise = mongoose.connect(MONGODB_URI as string, opts).then((m) => {
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
       return m;
     });
   }
