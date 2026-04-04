@@ -5,7 +5,7 @@ import { Event } from "@/database";
 import { getSimilarEventsBySlug } from "@/lib/actions/event.actions";
 import { cacheLife } from "next/cache";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import Link from "next/link";
 import connectToDatabase from "@/lib/mongodb";
 
 const EventDetailItem = ({ icon, alt, label }: { icon: string; alt: string; label: string }) => (
@@ -39,6 +39,18 @@ const EventTags = ({ tags }: { tags: string[] }) => (
   </div>
 )
 
+const EventUnavailable = () => (
+  <section className="mx-auto flex max-w-2xl flex-col items-center gap-4 py-24 text-center">
+    <h1>Event not available</h1>
+    <p className="text-sm opacity-80">
+      This event could not be loaded right now. It may have been removed or is not available in the current deployment.
+    </p>
+    <Link href="/" className="button-submit w-fit">
+      Back to home
+    </Link>
+  </section>
+)
+
 const EventDetails = async ({ slug }: { slug: string }) => {
   "use cache";
   cacheLife("hours");
@@ -46,7 +58,7 @@ const EventDetails = async ({ slug }: { slug: string }) => {
   await connectToDatabase();
   const event = await Event.findOne({ slug }).lean();
 
-  if (!event) return notFound();
+  if (!event) return <EventUnavailable />;
 
   const {
     _id,
@@ -64,7 +76,7 @@ const EventDetails = async ({ slug }: { slug: string }) => {
   } = event;
   const eventId: string = String(_id);
 
-  if (!description) return notFound();
+  if (!description) return <EventUnavailable />;
 
   const bookings = 10;
 
