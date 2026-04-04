@@ -1,5 +1,5 @@
 export function getBaseUrl() {
-  const configuredUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL;
+  const configuredUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   if (!configuredUrl) {
     return "http://localhost:3000";

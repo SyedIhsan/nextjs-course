@@ -1,12 +1,13 @@
 import BookEvent from "@/app/components/BookEvent";
 import EventCard from "@/app/components/EventCard";
 import { IEvent } from "@/database";
-import { Event } from "@/database";
 import { getSimilarEventsBySlug } from "@/lib/actions/event.actions";
+import { getBaseUrl } from "@/lib/base-url";
 import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
-import connectToDatabase from "@/lib/mongodb";
+
+const BASE_URL = getBaseUrl();
 
 const EventDetailItem = ({ icon, alt, label }: { icon: string; alt: string; label: string }) => (
   <div className="flex-row-gap-2 items-center">
@@ -55,8 +56,8 @@ const EventDetails = async ({ slug }: { slug: string }) => {
   "use cache";
   cacheLife("hours");
 
-  await connectToDatabase();
-  const event = await Event.findOne({ slug }).lean();
+  const request = await fetch(`${BASE_URL}/api/events/${slug}`);
+  const { event } = await request.json();
 
   if (!event) return <EventUnavailable />;
 
