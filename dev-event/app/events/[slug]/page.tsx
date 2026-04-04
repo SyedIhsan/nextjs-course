@@ -5,6 +5,7 @@ import { getSimilarEventsBySlug } from "@/lib/actions/event.actions";
 import { cacheLife } from "next/cache";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -39,13 +40,13 @@ const EventTags = ({ tags }: { tags: string[] }) => (
   </div>
 )
 
-const EventDetailsPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
+const EventDetailsContent = async ({ slug }: { slug: string }) => {
   "use cache";
   cacheLife("hours");
 
-  const { slug } = await params;
   const request = await fetch(`${BASE_URL}/api/events/${slug}`);
   const { event: {
+    _id,
     description,
     image,
     overview,
@@ -144,7 +145,7 @@ const EventDetailsPage = async ({ params }: { params: Promise<{ slug: string }> 
               </p>
             )}
 
-            <BookEvent />
+            <BookEvent eventId={_id} slug={slug} />
           </div>
         </aside>
       </div>
@@ -160,5 +161,19 @@ const EventDetailsPage = async ({ params }: { params: Promise<{ slug: string }> 
     </section>
   )
 }
+
+const EventDetailsBoundary = async ({ params }: { params: Promise<{ slug: string }> }) => {
+  const { slug } = await params;
+
+  return <EventDetailsContent slug={slug} />;
+};
+
+const EventDetailsPage = async ({ params }: { params: Promise<{ slug: string }> }) => {
+  return (
+    <Suspense fallback={<section id="event" />}>
+      <EventDetailsBoundary params={params} />
+    </Suspense>
+  );
+};
 
 export default EventDetailsPage
