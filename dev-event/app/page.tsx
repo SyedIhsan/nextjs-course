@@ -9,8 +9,24 @@ const BASE_URL = getBaseUrl();
 const Page = async () => {
   "use cache";
   cacheLife("hours")
-  const response = await fetch(`${BASE_URL}/api/events`);
-  const { events } = await response.json();
+
+  let events: IEvent[] = [];
+
+  try {
+    const response = await fetch(`${BASE_URL}/api/events`, {
+      headers: { Accept: "application/json" },
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+    if (!response.ok || !contentType.includes("application/json")) {
+      throw new Error(`Invalid events response: ${response.status}`);
+    }
+
+    const data = await response.json();
+    events = Array.isArray(data?.events) ? data.events : [];
+  } catch (error) {
+    console.error("Failed to fetch events", error);
+  }
 
   return (
     <section>

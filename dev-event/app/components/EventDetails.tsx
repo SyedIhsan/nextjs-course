@@ -56,8 +56,24 @@ const EventDetails = async ({ slug }: { slug: string }) => {
   "use cache";
   cacheLife("hours");
 
-  const request = await fetch(`${BASE_URL}/api/events/${slug}`);
-  const { event } = await request.json();
+  let event: any = null;
+
+  try {
+    const request = await fetch(`${BASE_URL}/api/events/${slug}`, {
+      headers: { Accept: "application/json" },
+    });
+
+    const contentType = request.headers.get("content-type") || "";
+    if (!request.ok || !contentType.includes("application/json")) {
+      throw new Error(`Invalid event response: ${request.status}`);
+    }
+
+    const data = await request.json();
+    event = data?.event ?? null;
+  } catch (error) {
+    console.error("Failed to fetch event by slug", error);
+    return <EventUnavailable />;
+  }
 
   if (!event) return <EventUnavailable />;
 
