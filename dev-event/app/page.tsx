@@ -2,8 +2,9 @@ import { IEvent } from "@/database";
 import EventCard from "./components/EventCard";
 import ExploreBtn from "./components/ExploreBtn";
 import { cacheLife } from "next/cache";
+import { getBaseUrl } from "@/lib/base-url";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const BASE_URL = getBaseUrl();
 
 const Page = async () => {
   "use cache";

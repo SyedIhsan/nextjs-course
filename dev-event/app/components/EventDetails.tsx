@@ -2,11 +2,12 @@ import BookEvent from "@/app/components/BookEvent";
 import EventCard from "@/app/components/EventCard";
 import { IEvent } from "@/database";
 import { getSimilarEventsBySlug } from "@/lib/actions/event.actions";
+import { getBaseUrl } from "@/lib/base-url";
 import { cacheLife } from "next/cache";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const BASE_URL = getBaseUrl();
 
 const EventDetailItem = ({ icon, alt, label }: { icon: string; alt: string; label: string }) => (
   <div className="flex-row-gap-2 items-center">
