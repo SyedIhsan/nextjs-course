@@ -1,8 +1,8 @@
-import { IEvent } from "@/database";
 import EventCard from "./components/EventCard";
 import ExploreBtn from "./components/ExploreBtn";
 import { cacheLife } from "next/cache";
 import { getBaseUrlCandidates } from "@/lib/base-url";
+import { events as fallbackEvents, type Event } from "@/lib/constants";
 
 const BASE_URL_CANDIDATES = getBaseUrlCandidates();
 
@@ -10,7 +10,7 @@ const Page = async () => {
   "use cache";
   cacheLife("hours")
 
-  let events: IEvent[] = [];
+  let events: Event[] = [];
 
   for (const baseUrl of BASE_URL_CANDIDATES) {
     try {
@@ -31,6 +31,10 @@ const Page = async () => {
     }
   }
 
+  if (events.length === 0) {
+    events = fallbackEvents;
+  }
+
   return (
     <section>
       <h1 className="text-center">The Hub for Every Dev <br /> Event You Can't Miss</h1>
@@ -42,7 +46,7 @@ const Page = async () => {
         <h3>Featured Events</h3>
 
         <ul className="events list-none">
-          {events && events.length > 0 && events.map((event: IEvent) => (
+          {events && events.length > 0 && events.map((event) => (
             <li key={event.title}>
               <EventCard {...event} />
             </li>
