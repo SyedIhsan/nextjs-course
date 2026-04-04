@@ -1,13 +1,12 @@
 import BookEvent from "@/app/components/BookEvent";
 import EventCard from "@/app/components/EventCard";
 import { IEvent } from "@/database";
+import { Event } from "@/database";
 import { getSimilarEventsBySlug } from "@/lib/actions/event.actions";
-import { getBaseUrl } from "@/lib/base-url";
 import { cacheLife } from "next/cache";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-
-const BASE_URL = getBaseUrl();
+import connectToDatabase from "@/lib/mongodb";
 
 const EventDetailItem = ({ icon, alt, label }: { icon: string; alt: string; label: string }) => (
   <div className="flex-row-gap-2 items-center">
@@ -44,8 +43,12 @@ const EventDetails = async ({ slug }: { slug: string }) => {
   "use cache";
   cacheLife("hours");
 
-  const request = await fetch(`${BASE_URL}/api/events/${slug}`);
-  const { event: {
+  await connectToDatabase();
+  const event = await Event.findOne({ slug }).lean();
+
+  if (!event) return notFound();
+
+  const {
     _id,
     description,
     image,
@@ -57,8 +60,9 @@ const EventDetails = async ({ slug }: { slug: string }) => {
     agenda,
     audience,
     tags,
-    organizer
-  } } = await request.json();
+    organizer,
+  } = event;
+  const eventId: string = String(_id);
 
   if (!description) return notFound();
 
@@ -145,7 +149,7 @@ const EventDetails = async ({ slug }: { slug: string }) => {
               </p>
             )}
 
-            <BookEvent eventId={_id} slug={slug} />
+            <BookEvent eventId={eventId} slug={slug} />
           </div>
         </aside>
       </div>

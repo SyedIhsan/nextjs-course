@@ -1,16 +1,16 @@
 import { IEvent } from "@/database";
+import { Event } from "@/database";
 import EventCard from "./components/EventCard";
 import ExploreBtn from "./components/ExploreBtn";
 import { cacheLife } from "next/cache";
-import { getBaseUrl } from "@/lib/base-url";
-
-const BASE_URL = getBaseUrl();
+import connectToDatabase from "@/lib/mongodb";
 
 const Page = async () => {
   "use cache";
   cacheLife("hours")
-  const response = await fetch(`${BASE_URL}/api/events`);
-  const { events } = await response.json();
+
+  await connectToDatabase();
+  const events = await Event.find().sort({ createdAt: -1 }).lean();
 
   return (
     <section>
