@@ -2,12 +2,12 @@ import BookEvent from "@/app/components/BookEvent";
 import EventCard from "@/app/components/EventCard";
 import { IEvent } from "@/database";
 import { getSimilarEventsBySlug } from "@/lib/actions/event.actions";
-import { getBaseUrl } from "@/lib/base-url";
+import { getBaseUrlCandidates } from "@/lib/base-url";
 import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 
-const BASE_URL = getBaseUrl();
+const BASE_URL_CANDIDATES = getBaseUrlCandidates();
 
 const EventDetailItem = ({ icon, alt, label }: { icon: string; alt: string; label: string }) => (
   <div className="flex-row-gap-2 items-center">
@@ -58,21 +58,23 @@ const EventDetails = async ({ slug }: { slug: string }) => {
 
   let event: any = null;
 
-  try {
-    const request = await fetch(`${BASE_URL}/api/events/${slug}`, {
-      headers: { Accept: "application/json" },
-    });
+  for (const baseUrl of BASE_URL_CANDIDATES) {
+    try {
+      const request = await fetch(`${baseUrl}/api/events/${slug}`, {
+        headers: { Accept: "application/json" },
+      });
 
-    const contentType = request.headers.get("content-type") || "";
-    if (!request.ok || !contentType.includes("application/json")) {
-      throw new Error(`Invalid event response: ${request.status}`);
+      const contentType = request.headers.get("content-type") || "";
+      if (!request.ok || !contentType.includes("application/json")) {
+        continue;
+      }
+
+      const data = await request.json();
+      event = data?.event ?? null;
+      break;
+    } catch {
+      continue;
     }
-
-    const data = await request.json();
-    event = data?.event ?? null;
-  } catch (error) {
-    console.error("Failed to fetch event by slug", error);
-    return <EventUnavailable />;
   }
 
   if (!event) return <EventUnavailable />;

@@ -2,9 +2,9 @@ import { IEvent } from "@/database";
 import EventCard from "./components/EventCard";
 import ExploreBtn from "./components/ExploreBtn";
 import { cacheLife } from "next/cache";
-import { getBaseUrl } from "@/lib/base-url";
+import { getBaseUrlCandidates } from "@/lib/base-url";
 
-const BASE_URL = getBaseUrl();
+const BASE_URL_CANDIDATES = getBaseUrlCandidates();
 
 const Page = async () => {
   "use cache";
@@ -12,20 +12,23 @@ const Page = async () => {
 
   let events: IEvent[] = [];
 
-  try {
-    const response = await fetch(`${BASE_URL}/api/events`, {
-      headers: { Accept: "application/json" },
-    });
+  for (const baseUrl of BASE_URL_CANDIDATES) {
+    try {
+      const response = await fetch(`${baseUrl}/api/events`, {
+        headers: { Accept: "application/json" },
+      });
 
-    const contentType = response.headers.get("content-type") || "";
-    if (!response.ok || !contentType.includes("application/json")) {
-      throw new Error(`Invalid events response: ${response.status}`);
+      const contentType = response.headers.get("content-type") || "";
+      if (!response.ok || !contentType.includes("application/json")) {
+        continue;
+      }
+
+      const data = await response.json();
+      events = Array.isArray(data?.events) ? data.events : [];
+      break;
+    } catch {
+      continue;
     }
-
-    const data = await response.json();
-    events = Array.isArray(data?.events) ? data.events : [];
-  } catch (error) {
-    console.error("Failed to fetch events", error);
   }
 
   return (
